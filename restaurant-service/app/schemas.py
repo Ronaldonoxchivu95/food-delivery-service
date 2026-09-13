@@ -2,7 +2,6 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-
 # ---------- Menu items ----------
 
 class MenuItemCreate(BaseModel):

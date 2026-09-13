@@ -3,9 +3,9 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
 
+from app import messaging
 from app.database import Base, get_db
 from app.main import app
-from app import messaging
 
 
 @pytest_asyncio.fixture

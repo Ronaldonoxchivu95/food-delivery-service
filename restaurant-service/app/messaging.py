@@ -10,7 +10,7 @@ Event types consumed (topic exchange "orders_events"):
 import asyncio
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import aio_pika
 from aio_pika.abc import AbstractIncomingMessage
@@ -39,7 +39,7 @@ async def _handle_order_created(payload: dict) -> None:
             stats = RestaurantStats(restaurant_id=restaurant_id, total_orders=0)
             session.add(stats)
         stats.total_orders += 1
-        stats.last_order_at = datetime.now(timezone.utc)
+        stats.last_order_at = datetime.now(UTC)
         await session.commit()
     # The restaurant's public listing may surface popularity/stats, so drop
     # any cached copies.
