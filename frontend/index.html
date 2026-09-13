@@ -1,0 +1,836 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>FoodExpress — доставка еды</title>
+<style>
+  :root {
+    --primary: #ef4444;
+    --primary-dark: #dc2626;
+    --bg: #f7f7f8;
+    --card: #ffffff;
+    --text: #1f2328;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --success: #16a34a;
+    --warning: #d97706;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  a { color: inherit; }
+  header {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .logo { font-size: 20px; font-weight: 800; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+  .userbox { display: flex; align-items: center; gap: 12px; font-size: 14px; color: var(--muted); }
+  .badge {
+    display: inline-block; padding: 2px 10px; border-radius: 999px;
+    font-size: 12px; font-weight: 600; background: #fee2e2; color: var(--primary-dark);
+  }
+  .badge.admin { background: #dbeafe; color: #1d4ed8; }
+  button {
+    cursor: pointer; border: none; border-radius: 8px; padding: 10px 16px;
+    font-size: 14px; font-weight: 600; transition: filter .15s ease;
+  }
+  button.primary { background: var(--primary); color: #fff; }
+  button.primary:hover { filter: brightness(0.92); }
+  button.secondary { background: #eef0f2; color: var(--text); }
+  button.secondary:hover { filter: brightness(0.95); }
+  button.small { padding: 6px 12px; font-size: 13px; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  input, select, textarea {
+    width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px;
+    font-size: 14px; font-family: inherit; background: #fff; color: var(--text);
+  }
+  label { font-size: 13px; font-weight: 600; color: var(--muted); display: block; margin-bottom: 4px; }
+  .field { margin-bottom: 14px; }
+  main { max-width: 1100px; margin: 0 auto; padding: 20px; }
+  .center-page {
+    min-height: calc(100vh - 70px); display: flex; align-items: center; justify-content: center; padding: 20px;
+  }
+  .auth-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 28px; width: 100%; max-width: 380px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .auth-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+  .auth-tabs button { flex: 1; background: #eef0f2; color: var(--muted); }
+  .auth-tabs button.active { background: var(--primary); color: #fff; }
+  .error-msg {
+    background: #fee2e2; color: #991b1b; padding: 10px 12px; border-radius: 8px;
+    font-size: 13px; margin-bottom: 14px; display: none;
+  }
+  .success-msg {
+    background: #dcfce7; color: #166534; padding: 10px 12px; border-radius: 8px;
+    font-size: 13px; margin-bottom: 14px; display: none;
+  }
+  .tabs { display: flex; gap: 6px; margin-bottom: 20px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .tabs button {
+    background: transparent; color: var(--muted); border-radius: 8px 8px 0 0; padding: 10px 18px;
+  }
+  .tabs button.active { color: var(--primary); background: #fff; border: 1px solid var(--border); border-bottom-color: #fff; margin-bottom: -1px; }
+  .view { display: none; }
+  .view.active { display: block; }
+  .grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px;
+  }
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); cursor: pointer; transition: box-shadow .15s;
+  }
+  .card:hover { box-shadow: 0 3px 10px rgba(0,0,0,0.08); }
+  .card h3 { margin: 0 0 4px; font-size: 16px; }
+  .card p { margin: 0; font-size: 13px; color: var(--muted); }
+  .layout-2col { display: grid; grid-template-columns: 1fr 320px; gap: 20px; align-items: start; }
+  @media (max-width: 800px) { .layout-2col { grid-template-columns: 1fr; } }
+  .category-block { margin-bottom: 22px; }
+  .category-block h4 { margin: 0 0 10px; font-size: 15px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .menu-item {
+    display: flex; justify-content: space-between; align-items: center; gap: 10px;
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px;
+  }
+  .menu-item.unavailable { opacity: 0.5; }
+  .menu-item .name { font-weight: 600; font-size: 14px; }
+  .menu-item .desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .menu-item .price { font-weight: 700; color: var(--primary-dark); white-space: nowrap; margin-left: 10px; }
+  .cart-box {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 16px; position: sticky; top: 90px;
+  }
+  .cart-box h3 { margin-top: 0; }
+  .cart-line { display: flex; justify-content: space-between; font-size: 14px; padding: 6px 0; border-bottom: 1px dashed var(--border); }
+  .cart-total { display: flex; justify-content: space-between; font-weight: 700; padding-top: 10px; font-size: 15px; }
+  .order-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 14px;
+  }
+  .order-card .head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px; }
+  .status-badge { padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
+  .status-created { background: #fef3c7; color: #92400e; }
+  .status-confirmed { background: #dbeafe; color: #1e40af; }
+  .status-assigned { background: #ede9fe; color: #6d28d9; }
+  .status-on_the_way { background: #cffafe; color: #0e7490; }
+  .status-delivered { background: #dcfce7; color: #166534; }
+  .status-cancelled { background: #fee2e2; color: #991b1b; }
+  .order-items { font-size: 13px; color: var(--muted); margin: 8px 0; }
+  .admin-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 10px; }
+  .admin-row .field { margin-bottom: 0; flex: 1; min-width: 140px; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 26px 0; }
+  .muted { color: var(--muted); font-size: 13px; }
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); }
+  .checkbox-row { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text); font-weight: 400; }
+  .checkbox-row input { width: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table th, table td { text-align: left; padding: 8px; border-bottom: 1px solid var(--border); }
+  .qty-controls { display: flex; align-items: center; gap: 6px; }
+  .qty-controls button { padding: 4px 10px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🍔 FoodExpress</div>
+  <div class="userbox" id="userbox" style="display:none">
+    <span id="user-email"></span>
+    <span class="badge" id="user-role"></span>
+    <button class="secondary small" onclick="logout()">Выйти</button>
+  </div>
+</header>
+
+<!-- AUTH SCREEN -->
+<div class="center-page" id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-tabs">
+      <button id="tab-login" class="active" onclick="switchAuthTab('login')">Вход</button>
+      <button id="tab-register" onclick="switchAuthTab('register')">Регистрация</button>
+    </div>
+
+    <div class="error-msg" id="auth-error"></div>
+    <div class="success-msg" id="auth-success"></div>
+
+    <form id="login-form" onsubmit="return handleLogin(event)">
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="login-email" required autocomplete="username" />
+      </div>
+      <div class="field">
+        <label>Пароль</label>
+        <input type="password" id="login-password" required autocomplete="current-password" />
+      </div>
+      <button type="submit" class="primary" style="width:100%">Войти</button>
+    </form>
+
+    <form id="register-form" style="display:none" onsubmit="return handleRegister(event)">
+      <div class="field">
+        <label>Имя</label>
+        <input type="text" id="reg-name" required />
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="reg-email" required autocomplete="username" />
+      </div>
+      <div class="field">
+        <label>Пароль (минимум 6 символов)</label>
+        <input type="password" id="reg-password" required minlength="6" autocomplete="new-password" />
+      </div>
+      <div class="field">
+        <label class="checkbox-row">
+          <input type="checkbox" id="reg-is-admin" onchange="document.getElementById('reg-admin-secret-field').style.display = this.checked ? 'block' : 'none'" />
+          Я администратор
+        </label>
+      </div>
+      <div class="field" id="reg-admin-secret-field" style="display:none">
+        <label>Секретный код администратора</label>
+        <input type="text" id="reg-admin-secret" />
+      </div>
+      <button type="submit" class="primary" style="width:100%">Зарегистрироваться</button>
+    </form>
+  </div>
+</div>
+
+<!-- APP SCREEN -->
+<main id="app-screen" style="display:none">
+  <div class="tabs">
+    <button id="nav-restaurants" class="active" onclick="switchView('restaurants')">Рестораны</button>
+    <button id="nav-orders" onclick="switchView('orders')">Мои заказы</button>
+    <button id="nav-admin" onclick="switchView('admin')" style="display:none">Админ-панель</button>
+  </div>
+
+  <!-- RESTAURANTS VIEW -->
+  <div class="view active" id="view-restaurants">
+    <div id="restaurant-list-wrap">
+      <h2 style="margin-top:0">Рестораны</h2>
+      <div class="grid" id="restaurant-grid"></div>
+    </div>
+
+    <div id="restaurant-detail-wrap" style="display:none">
+      <button class="secondary small" onclick="backToRestaurantList()">← Все рестораны</button>
+      <h2 id="restaurant-detail-name"></h2>
+      <div class="layout-2col">
+        <div id="menu-categories"></div>
+        <div class="cart-box">
+          <h3>Корзина</h3>
+          <div id="cart-lines"><p class="muted">Корзина пуста</p></div>
+          <div class="cart-total"><span>Итого</span><span id="cart-total-price">0.00 ₽</span></div>
+          <div class="error-msg" id="order-error"></div>
+          <div class="success-msg" id="order-success"></div>
+          <button class="primary" style="width:100%; margin-top:12px" onclick="placeOrder()" id="place-order-btn" disabled>Оформить заказ</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ORDERS VIEW -->
+  <div class="view" id="view-orders">
+    <h2 style="margin-top:0" id="orders-title">Мои заказы</h2>
+    <div id="orders-list"></div>
+  </div>
+
+  <!-- ADMIN VIEW -->
+  <div class="view" id="view-admin">
+    <h2 style="margin-top:0">Админ-панель</h2>
+
+    <h3>Новый ресторан</h3>
+    <div class="admin-row">
+      <div class="field"><label>Название</label><input id="new-rest-name" /></div>
+      <div class="field"><label>Адрес</label><input id="new-rest-address" /></div>
+      <div class="field"><label>Описание</label><input id="new-rest-desc" /></div>
+      <button class="primary" onclick="createRestaurant()">Создать</button>
+    </div>
+    <div class="success-msg" id="admin-rest-success"></div>
+
+    <hr />
+
+    <h3>Меню ресторана</h3>
+    <div class="field" style="max-width:320px">
+      <label>Выберите ресторан</label>
+      <select id="admin-rest-select" onchange="onAdminRestaurantSelect()"></select>
+    </div>
+
+    <div id="admin-menu-editor" style="display:none">
+      <div class="admin-row">
+        <div class="field"><label>Новая категория</label><input id="new-cat-name" /></div>
+        <button class="secondary" onclick="createCategory()">Добавить категорию</button>
+      </div>
+
+      <div class="admin-row">
+        <div class="field"><label>Название блюда</label><input id="new-item-name" /></div>
+        <div class="field"><label>Цена</label><input id="new-item-price" type="number" step="0.01" min="0" /></div>
+        <div class="field">
+          <label>Категория</label>
+          <select id="new-item-category"><option value="">Без категории</option></select>
+        </div>
+        <button class="primary" onclick="createMenuItem()">Добавить блюдо</button>
+      </div>
+      <div class="success-msg" id="admin-menu-success"></div>
+
+      <table id="admin-menu-table">
+        <thead><tr><th>Блюдо</th><th>Цена</th><th>Доступно</th><th></th></tr></thead>
+        <tbody id="admin-menu-tbody"></tbody>
+      </table>
+    </div>
+
+    <hr />
+
+    <h3>Курьеры</h3>
+    <div class="admin-row">
+      <div class="field"><label>Имя</label><input id="new-courier-name" /></div>
+      <div class="field"><label>Телефон</label><input id="new-courier-phone" /></div>
+      <button class="primary" onclick="createCourier()">Добавить курьера</button>
+    </div>
+    <table>
+      <thead><tr><th>Имя</th><th>Телефон</th><th>Статус</th><th></th></tr></thead>
+      <tbody id="admin-courier-tbody"></tbody>
+    </table>
+
+    <hr />
+
+    <h3>Все заказы</h3>
+    <div id="admin-orders-list"></div>
+  </div>
+</main>
+
+<script>
+const API = ''; // same origin — Nginx proxies /api/* to the backend services
+
+// ---------- State ----------
+let state = {
+  token: localStorage.getItem('fd_token') || null,
+  email: localStorage.getItem('fd_email') || null,
+  role: localStorage.getItem('fd_role') || null,
+};
+let currentRestaurant = null;   // { id, name, categories: [...] }
+let cart = {};                  // menu_item_id -> { name, price, quantity }
+let couriersCache = [];
+
+// ---------- Helpers ----------
+function authHeaders() {
+  return state.token ? { 'Authorization': 'Bearer ' + state.token } : {};
+}
+
+async function api(path, options = {}) {
+  const res = await fetch(API + path, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...authHeaders(),
+      ...(options.headers || {}),
+    },
+  });
+  let data = null;
+  try { data = await res.json(); } catch (e) { /* no body */ }
+  if (!res.ok) {
+    const detail = data && data.detail ? data.detail : `Ошибка ${res.status}`;
+    throw new Error(typeof detail === 'string' ? detail : JSON.stringify(detail));
+  }
+  return data;
+}
+
+function money(v) {
+  return Number(v).toFixed(2) + ' ₽';
+}
+
+function showMsg(elId, text, isError) {
+  const el = document.getElementById(elId);
+  el.textContent = text;
+  el.style.display = text ? 'block' : 'none';
+}
+
+const STATUS_LABELS = {
+  created: 'Создан', confirmed: 'Подтверждён', assigned: 'Курьер назначен',
+  on_the_way: 'В пути', delivered: 'Доставлен', cancelled: 'Отменён',
+};
+const ALL_STATUSES = Object.keys(STATUS_LABELS);
+
+// ---------- Auth ----------
+function switchAuthTab(tab) {
+  document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+  document.getElementById('tab-register').classList.toggle('active', tab === 'register');
+  document.getElementById('login-form').style.display = tab === 'login' ? 'block' : 'none';
+  document.getElementById('register-form').style.display = tab === 'register' ? 'block' : 'none';
+  showMsg('auth-error', ''); showMsg('auth-success', '');
+}
+
+async function handleLogin(e) {
+  e.preventDefault();
+  showMsg('auth-error', '');
+  try {
+    const data = await api('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: document.getElementById('login-email').value,
+        password: document.getElementById('login-password').value,
+      }),
+    });
+    await onLoggedIn(data.access_token);
+  } catch (err) {
+    showMsg('auth-error', err.message);
+  }
+  return false;
+}
+
+async function handleRegister(e) {
+  e.preventDefault();
+  showMsg('auth-error', ''); showMsg('auth-success', '');
+  const isAdmin = document.getElementById('reg-is-admin').checked;
+  const payload = {
+    full_name: document.getElementById('reg-name').value,
+    email: document.getElementById('reg-email').value,
+    password: document.getElementById('reg-password').value,
+  };
+  if (isAdmin) payload.admin_secret = document.getElementById('reg-admin-secret').value;
+  try {
+    await api('/api/auth/register', { method: 'POST', body: JSON.stringify(payload) });
+    showMsg('auth-success', 'Регистрация успешна! Теперь войдите.');
+    switchAuthTab('login');
+    document.getElementById('login-email').value = payload.email;
+  } catch (err) {
+    showMsg('auth-error', err.message);
+  }
+  return false;
+}
+
+async function onLoggedIn(token) {
+  state.token = token;
+  localStorage.setItem('fd_token', token);
+  const me = await api('/api/auth/me');
+  state.email = me.email;
+  state.role = me.role;
+  localStorage.setItem('fd_email', me.email);
+  localStorage.setItem('fd_role', me.role);
+  showApp();
+}
+
+function logout() {
+  state = { token: null, email: null, role: null };
+  localStorage.removeItem('fd_token');
+  localStorage.removeItem('fd_email');
+  localStorage.removeItem('fd_role');
+  cart = {}; currentRestaurant = null;
+  document.getElementById('app-screen').style.display = 'none';
+  document.getElementById('userbox').style.display = 'none';
+  document.getElementById('auth-screen').style.display = 'flex';
+}
+
+function showApp() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display = 'block';
+  document.getElementById('userbox').style.display = 'flex';
+  document.getElementById('user-email').textContent = state.email;
+  const roleBadge = document.getElementById('user-role');
+  roleBadge.textContent = state.role === 'admin' ? 'Администратор' : 'Пользователь';
+  roleBadge.classList.toggle('admin', state.role === 'admin');
+  document.getElementById('nav-admin').style.display = state.role === 'admin' ? 'inline-block' : 'none';
+  document.getElementById('orders-title').textContent = state.role === 'admin' ? 'Мои заказы' : 'Мои заказы';
+  switchView('restaurants');
+  loadRestaurants();
+}
+
+// ---------- Navigation ----------
+function switchView(view) {
+  ['restaurants', 'orders', 'admin'].forEach(v => {
+    document.getElementById('view-' + v).classList.toggle('active', v === view);
+    document.getElementById('nav-' + v).classList.toggle('active', v === view);
+  });
+  if (view === 'orders') loadOrders();
+  if (view === 'admin') loadAdmin();
+}
+
+// ---------- Restaurants & menu ----------
+async function loadRestaurants() {
+  const grid = document.getElementById('restaurant-grid');
+  grid.innerHTML = '<p class="muted">Загрузка…</p>';
+  try {
+    const restaurants = await api('/api/restaurants');
+    if (!restaurants.length) {
+      grid.innerHTML = '<div class="empty-state">Пока нет ни одного ресторана.' +
+        (state.role === 'admin' ? ' Добавьте его в Админ-панели.' : '') + '</div>';
+      return;
+    }
+    grid.innerHTML = '';
+    restaurants.forEach(r => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.onclick = () => openRestaurant(r.id, r.name);
+      card.innerHTML = `<h3>${escapeHtml(r.name)}</h3><p>${escapeHtml(r.address)}</p>` +
+        (r.description ? `<p style="margin-top:6px">${escapeHtml(r.description)}</p>` : '');
+      grid.appendChild(card);
+    });
+  } catch (err) {
+    grid.innerHTML = `<p class="error-msg" style="display:block">${escapeHtml(err.message)}</p>`;
+  }
+}
+
+async function openRestaurant(id, name) {
+  cart = {};
+  document.getElementById('restaurant-list-wrap').style.display = 'none';
+  const detail = document.getElementById('restaurant-detail-wrap');
+  detail.style.display = 'block';
+  document.getElementById('restaurant-detail-name').textContent = name;
+  const catsEl = document.getElementById('menu-categories');
+  catsEl.innerHTML = '<p class="muted">Загрузка меню…</p>';
+  showMsg('order-error', ''); showMsg('order-success', '');
+  try {
+    const menu = await api(`/api/restaurants/${id}/menu`);
+    currentRestaurant = { id, name, categories: menu.categories || [] };
+    renderMenu();
+    renderCart();
+  } catch (err) {
+    catsEl.innerHTML = `<p class="error-msg" style="display:block">${escapeHtml(err.message)}</p>`;
+  }
+}
+
+function backToRestaurantList() {
+  document.getElementById('restaurant-detail-wrap').style.display = 'none';
+  document.getElementById('restaurant-list-wrap').style.display = 'block';
+  currentRestaurant = null;
+  cart = {};
+}
+
+function renderMenu() {
+  const catsEl = document.getElementById('menu-categories');
+  if (!currentRestaurant.categories.length) {
+    catsEl.innerHTML = '<div class="empty-state">В этом ресторане пока нет позиций меню.</div>';
+    return;
+  }
+  catsEl.innerHTML = '';
+  currentRestaurant.categories.forEach(cat => {
+    const block = document.createElement('div');
+    block.className = 'category-block';
+    const items = (cat.items || []).map(item => `
+      <div class="menu-item ${item.is_available ? '' : 'unavailable'}">
+        <div>
+          <div class="name">${escapeHtml(item.name)}</div>
+          ${item.description ? `<div class="desc">${escapeHtml(item.description)}</div>` : ''}
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="price">${money(item.price)}</div>
+          ${item.is_available
+            ? `<button class="secondary small" onclick="addToCart(${item.id}, '${escapeJs(item.name)}', ${item.price})">+</button>`
+            : `<span class="muted" style="font-size:12px">нет в наличии</span>`}
+        </div>
+      </div>
+    `).join('');
+    block.innerHTML = `<h4>${escapeHtml(cat.name)}</h4>${items}`;
+    catsEl.appendChild(block);
+  });
+}
+
+function addToCart(id, name, price) {
+  if (!cart[id]) cart[id] = { name, price, quantity: 0 };
+  cart[id].quantity += 1;
+  renderCart();
+}
+
+function changeQty(id, delta) {
+  if (!cart[id]) return;
+  cart[id].quantity += delta;
+  if (cart[id].quantity <= 0) delete cart[id];
+  renderCart();
+}
+
+function renderCart() {
+  const linesEl = document.getElementById('cart-lines');
+  const ids = Object.keys(cart);
+  if (!ids.length) {
+    linesEl.innerHTML = '<p class="muted">Корзина пуста</p>';
+    document.getElementById('cart-total-price').textContent = money(0);
+    document.getElementById('place-order-btn').disabled = true;
+    return;
+  }
+  let total = 0;
+  linesEl.innerHTML = ids.map(id => {
+    const line = cart[id];
+    total += line.price * line.quantity;
+    return `<div class="cart-line">
+      <span>${escapeHtml(line.name)}</span>
+      <span class="qty-controls">
+        <button class="secondary small" onclick="changeQty(${id}, -1)">−</button>
+        ${line.quantity}
+        <button class="secondary small" onclick="changeQty(${id}, 1)">+</button>
+        <b style="margin-left:6px">${money(line.price * line.quantity)}</b>
+      </span>
+    </div>`;
+  }).join('');
+  document.getElementById('cart-total-price').textContent = money(total);
+  document.getElementById('place-order-btn').disabled = false;
+}
+
+async function placeOrder() {
+  showMsg('order-error', ''); showMsg('order-success', '');
+  const items = Object.entries(cart).map(([menu_item_id, line]) => ({
+    menu_item_id: Number(menu_item_id), quantity: line.quantity,
+  }));
+  if (!items.length) return;
+  try {
+    await api('/api/orders', {
+      method: 'POST',
+      body: JSON.stringify({ restaurant_id: currentRestaurant.id, items }),
+    });
+    cart = {};
+    renderCart();
+    showMsg('order-success', 'Заказ оформлен! Посмотреть его можно во вкладке «Мои заказы».');
+  } catch (err) {
+    showMsg('order-error', err.message);
+  }
+}
+
+// ---------- Orders ----------
+async function loadOrders() {
+  const listEl = document.getElementById('orders-list');
+  listEl.innerHTML = '<p class="muted">Загрузка…</p>';
+  try {
+    const orders = await api('/api/orders');
+    if (!orders.length) {
+      listEl.innerHTML = '<div class="empty-state">Заказов пока нет.</div>';
+      return;
+    }
+    listEl.innerHTML = orders.map(o => renderOrderCard(o, false)).join('');
+  } catch (err) {
+    listEl.innerHTML = `<p class="error-msg" style="display:block">${escapeHtml(err.message)}</p>`;
+  }
+}
+
+function renderOrderCard(o, adminControls) {
+  const itemsStr = (o.items || []).map(i => `${escapeHtml(i.name_snapshot)} × ${i.quantity}`).join(', ');
+  const statusOptions = ALL_STATUSES.map(s =>
+    `<option value="${s}" ${s === o.status ? 'selected' : ''}>${STATUS_LABELS[s]}</option>`).join('');
+  const courierOptions = ['<option value="">Не назначен</option>'].concat(
+    couriersCache.map(c => `<option value="${c.id}" ${c.id === o.courier_id ? 'selected' : ''}>${escapeHtml(c.name)}${c.is_available ? '' : ' (занят)'}</option>`)
+  ).join('');
+  return `
+    <div class="order-card">
+      <div class="head">
+        <b>Заказ #${o.id}</b>
+        <span class="status-badge status-${o.status}">${STATUS_LABELS[o.status] || o.status}</span>
+      </div>
+      <div class="order-items">${itemsStr || '—'}</div>
+      <div><b>${money(o.total_price)}</b> · <span class="muted">${new Date(o.created_at).toLocaleString('ru-RU')}</span></div>
+      ${adminControls ? `
+        <div class="admin-row" style="margin-top:10px">
+          <div class="field"><label>Статус</label><select id="status-${o.id}">${statusOptions}</select></div>
+          <div class="field"><label>Курьер</label><select id="courier-${o.id}">${courierOptions}</select></div>
+          <button class="secondary" onclick="updateOrderStatus(${o.id})">Сохранить</button>
+        </div>
+      ` : ''}
+    </div>`;
+}
+
+async function updateOrderStatus(orderId) {
+  const status = document.getElementById(`status-${orderId}`).value;
+  const courierVal = document.getElementById(`courier-${orderId}`).value;
+  const payload = { status };
+  if (courierVal) payload.courier_id = Number(courierVal);
+  try {
+    await api(`/api/orders/${orderId}/status`, { method: 'PATCH', body: JSON.stringify(payload) });
+    await loadAdminOrders();
+    await loadAdminCouriers();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+// ---------- Admin ----------
+async function loadAdmin() {
+  await Promise.all([populateAdminRestaurantSelect(), loadAdminCouriers(), loadAdminOrders()]);
+}
+
+async function populateAdminRestaurantSelect() {
+  const select = document.getElementById('admin-rest-select');
+  try {
+    const restaurants = await api('/api/restaurants');
+    select.innerHTML = '<option value="">— выберите ресторан —</option>' +
+      restaurants.map(r => `<option value="${r.id}">${escapeHtml(r.name)}</option>`).join('');
+  } catch (err) {
+    select.innerHTML = '<option>Ошибка загрузки</option>';
+  }
+}
+
+async function onAdminRestaurantSelect() {
+  const id = document.getElementById('admin-rest-select').value;
+  const editor = document.getElementById('admin-menu-editor');
+  if (!id) { editor.style.display = 'none'; return; }
+  editor.style.display = 'block';
+  await refreshAdminMenu(id);
+}
+
+async function refreshAdminMenu(restaurantId) {
+  const menu = await api(`/api/restaurants/${restaurantId}/menu`);
+  const catSelect = document.getElementById('new-item-category');
+  catSelect.innerHTML = '<option value="">Без категории</option>' +
+    (menu.categories || []).map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+
+  const tbody = document.getElementById('admin-menu-tbody');
+  const rows = [];
+  (menu.categories || []).forEach(cat => {
+    (cat.items || []).forEach(item => {
+      rows.push(`<tr>
+        <td>${escapeHtml(item.name)} <span class="muted">(${escapeHtml(cat.name)})</span></td>
+        <td>${money(item.price)}</td>
+        <td>${item.is_available ? 'Да' : 'Нет'}</td>
+        <td><button class="secondary small" onclick="toggleItemAvailability(${item.id}, ${item.is_available}, ${restaurantId})">
+          ${item.is_available ? 'Снять с продажи' : 'Вернуть в продажу'}
+        </button></td>
+      </tr>`);
+    });
+  });
+  tbody.innerHTML = rows.join('') || '<tr><td colspan="4" class="muted">Меню пока пустое</td></tr>';
+}
+
+async function createRestaurant() {
+  showMsg('admin-rest-success', '');
+  const name = document.getElementById('new-rest-name').value.trim();
+  const address = document.getElementById('new-rest-address').value.trim();
+  const description = document.getElementById('new-rest-desc').value.trim();
+  if (!name || !address) { alert('Укажите название и адрес'); return; }
+  try {
+    await api('/api/restaurants', { method: 'POST', body: JSON.stringify({ name, address, description: description || null }) });
+    document.getElementById('new-rest-name').value = '';
+    document.getElementById('new-rest-address').value = '';
+    document.getElementById('new-rest-desc').value = '';
+    showMsg('admin-rest-success', 'Ресторан создан');
+    await populateAdminRestaurantSelect();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+async function createCategory() {
+  const restId = document.getElementById('admin-rest-select').value;
+  const name = document.getElementById('new-cat-name').value.trim();
+  if (!restId || !name) return;
+  try {
+    await api(`/api/restaurants/${restId}/categories`, { method: 'POST', body: JSON.stringify({ name }) });
+    document.getElementById('new-cat-name').value = '';
+    await refreshAdminMenu(restId);
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+async function createMenuItem() {
+  showMsg('admin-menu-success', '');
+  const restId = document.getElementById('admin-rest-select').value;
+  const name = document.getElementById('new-item-name').value.trim();
+  const price = parseFloat(document.getElementById('new-item-price').value);
+  const categoryId = document.getElementById('new-item-category').value;
+  if (!restId || !name || !price) { alert('Заполните название и цену'); return; }
+  try {
+    await api(`/api/restaurants/${restId}/menu-items`, {
+      method: 'POST',
+      body: JSON.stringify({ name, price, category_id: categoryId ? Number(categoryId) : null }),
+    });
+    document.getElementById('new-item-name').value = '';
+    document.getElementById('new-item-price').value = '';
+    showMsg('admin-menu-success', 'Блюдо добавлено');
+    await refreshAdminMenu(restId);
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+async function toggleItemAvailability(itemId, currentlyAvailable, restaurantId) {
+  try {
+    await api(`/api/menu-items/${itemId}`, {
+      method: 'PATCH', body: JSON.stringify({ is_available: !currentlyAvailable }),
+    });
+    await refreshAdminMenu(restaurantId);
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+async function createCourier() {
+  const name = document.getElementById('new-courier-name').value.trim();
+  const phone = document.getElementById('new-courier-phone').value.trim();
+  if (!name || !phone) { alert('Укажите имя и телефон'); return; }
+  try {
+    await api('/api/couriers', { method: 'POST', body: JSON.stringify({ name, phone }) });
+    document.getElementById('new-courier-name').value = '';
+    document.getElementById('new-courier-phone').value = '';
+    await loadAdminCouriers();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+async function loadAdminCouriers() {
+  try {
+    couriersCache = await api('/api/couriers');
+    const tbody = document.getElementById('admin-courier-tbody');
+    tbody.innerHTML = couriersCache.map(c => `
+      <tr>
+        <td>${escapeHtml(c.name)}</td>
+        <td>${escapeHtml(c.phone)}</td>
+        <td>${c.is_available ? 'Свободен' : 'Занят'}</td>
+        <td><button class="secondary small" onclick="toggleCourier(${c.id}, ${c.is_available})">
+          ${c.is_available ? 'Сделать занятым' : 'Сделать свободным'}
+        </button></td>
+      </tr>
+    `).join('') || '<tr><td colspan="4" class="muted">Курьеров пока нет</td></tr>';
+  } catch (err) {
+    document.getElementById('admin-courier-tbody').innerHTML = `<tr><td colspan="4">${escapeHtml(err.message)}</td></tr>`;
+  }
+}
+
+async function toggleCourier(id, currentlyAvailable) {
+  try {
+    await api(`/api/couriers/${id}`, { method: 'PATCH', body: JSON.stringify({ is_available: !currentlyAvailable }) });
+    await loadAdminCouriers();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+async function loadAdminOrders() {
+  const listEl = document.getElementById('admin-orders-list');
+  listEl.innerHTML = '<p class="muted">Загрузка…</p>';
+  try {
+    if (!couriersCache.length) await loadAdminCouriers();
+    const orders = await api('/api/orders');
+    if (!orders.length) { listEl.innerHTML = '<div class="empty-state">Заказов пока нет.</div>'; return; }
+    listEl.innerHTML = orders.map(o => renderOrderCard(o, true)).join('');
+  } catch (err) {
+    listEl.innerHTML = `<p class="error-msg" style="display:block">${escapeHtml(err.message)}</p>`;
+  }
+}
+
+// ---------- Utils ----------
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str).replace(/[&<>"']/g, s => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[s]));
+}
+function escapeJs(str) {
+  return String(str).replace(/'/g, "\\'");
+}
+
+// ---------- Boot ----------
+(async function boot() {
+  if (state.token) {
+    try {
+      await onLoggedIn(state.token);
+    } catch (e) {
+      logout();
+    }
+  }
+})();
+</script>
+</body>
+</html>
