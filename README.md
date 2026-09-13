@@ -205,4 +205,5 @@ Kafka, Kubernetes, service mesh, Saga/CQRS и деплой в облако со�
 или в CI (GitHub Actions это сделает автоматически при пуше).
 #   -  
  #   -  
+ #   f o o d - d e l i v e r y - s e r v i c e  
  
