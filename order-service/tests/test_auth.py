@@ -47,7 +47,9 @@ async def test_register_with_correct_admin_secret_grants_admin_role(client):
     assert resp.json()["role"] == "admin"
 
 
-async def test_register_with_wrong_admin_secret_stays_regular_user(client):
+async def test_register_with_wrong_admin_secret_returns_400(client):
+    # A wrong admin secret must fail loudly (400) rather than silently
+    # falling back to a regular user account — see app/routers/auth.py.
     resp = await client.post(
         "/api/auth/register",
         json={
@@ -57,8 +59,7 @@ async def test_register_with_wrong_admin_secret_stays_regular_user(client):
             "admin_secret": "totally-wrong",
         },
     )
-    assert resp.status_code == 201
-    assert resp.json()["role"] == "user"
+    assert resp.status_code == 400
 
 
 async def test_me_requires_authentication(client):
