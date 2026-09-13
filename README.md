@@ -204,4 +204,5 @@ Kafka, Kubernetes, service mesh, Saga/CQRS и деплой в облако со�
 защитой обязательно прогоните `docker compose up --build` и тесты локально
 или в CI (GitHub Actions это сделает автоматически при пуше).
 #   -  
+ #   -  
  
